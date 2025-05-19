@@ -1,0 +1,16 @@
+# === Backend Libraries ===
+langchain==0.1.14
+openai==1.24.1
+faiss-cpu==1.7.4
+pymupdf==1.23.22
+python-dotenv==1.0.1
+tiktoken==0.5.1
+tqdm==4.66.2
+pydantic==2.7.1
+
+# === Backend Web Framework ===
+fastapi==0.110.2
+uvicorn[standard]==0.29.0
+aiofiles==23.2.1
+
+# === Frontend Libraries ===
