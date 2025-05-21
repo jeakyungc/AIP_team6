@@ -5,7 +5,7 @@ from pathlib import Path
 
 if __name__ == "__main__":
     # 1. PDF → chunks
-    pdf_path = "data/raw/sample.pdf" 
+    pdf_path = "../../../data/raw/sample.pdf" 
 
     if not Path(pdf_path).exists():
         print(f"PDF 파일이 존재하지 않습니다: {pdf_path}")

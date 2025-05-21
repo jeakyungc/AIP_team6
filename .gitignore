@@ -5,3 +5,4 @@ __pycache__/
 data/vectors/
 data/processed/
 *.db/
+/src/backend/image_gen/.env
