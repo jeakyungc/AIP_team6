@@ -13,8 +13,7 @@ api_key = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 
 contents = (
-    "Create me an ER diagram"
-    " Artist(artist id, artist name, bio) Play(artist id, song id) Song(song id, song title, duration, genre) Album(album id, album name, release date) Contain(album id, song id) (Constraint 1) Multiple artists can play the same song for their own albums (Constriaint 2) The Contain relationship between Album and Song is many-to-many. That is, an album can contain multiple songs, and a song can belong to multiple albums. (Constriaint 3) Every song must be part of at least one album, i.e., total participation."
+    "a diagram of er model for user management system"
 )
 
 # ✅ response_modalities must include both TEXT and IMAGE
