@@ -13,7 +13,7 @@
     "pdfjs-dist": "^4.8.69",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-pdf": "^7.7.2",
+    "react-pdf": "^9.2.1",
     "react-rnd": "^10.5.2",
     "reactflow": "^11.11.4",
     "uuid": "^11.1.0"
