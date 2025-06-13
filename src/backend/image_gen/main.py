@@ -46,7 +46,6 @@ class PromptRequest(BaseModel):
 
 @app.on_event("startup")
 async def startup_event():
-    """Load Promptist model and tokenizer when the FastAPI app starts."""
     global prompter_model, prompter_tokenizer
     print("Loading Promptist model...")
     try:
@@ -61,7 +60,6 @@ async def startup_event():
         raise HTTPException(status_code=500, detail="Failed to load AI models at startup.")
 
 def generate_optimized_prompt(plain_text: str) -> str:
-    """Generate an optimized prompt using the Promptist model."""
     if prompter_model is None or prompter_tokenizer is None:
         raise HTTPException(status_code=500, detail="Promptist model not loaded.")
 
@@ -82,10 +80,7 @@ def _sync_generate_content(model, contents, config):
     )
 
 async def generate_image_with_gemini(prompt: str, filename: str):
-    """
-    Generate an image using Gemini and save it to the STATIC_FILES_DIR.
-    Returns the filename (e.g., 'image_When_the_stars_threw_4a8232b9.png').
-    """
+
     full_filepath = os.path.join(STATIC_FILES_DIR, filename) # Path where the file will be saved
     try:
         print(f"🎨 Generating image for prompt: '{prompt}'")
@@ -122,11 +117,7 @@ async def generate_image_with_gemini(prompt: str, filename: str):
 
 @app.post("/generate-image/")
 async def create_image(request: PromptRequest, http_request: Request): # Add http_request: Request
-    """
-    Receives a text prompt, optimizes it using Promptist,
-    and then generates an image using Gemini.
-    Returns a URL to the generated image.
-    """
+
     user_input = request.text_prompt
     if not user_input:
         raise HTTPException(status_code=400, detail="Text prompt cannot be empty.")
