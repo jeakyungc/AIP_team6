@@ -51,6 +51,9 @@ export default function PDFViewer() {
   const [isready, setIsready] = useState(false);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+const [chunkToDelete, setChunkToDelete] = useState<string | null>(null);
+
   useEffect(() => {
     if (!file) return;
 
@@ -68,7 +71,7 @@ export default function PDFViewer() {
   }, [chunks]);
 
   const uploadPDF = async (file: File) => {
-    /*
+    
     const formData = new FormData();
     formData.append('file', file);
 
@@ -79,8 +82,8 @@ export default function PDFViewer() {
 
     if (!res.ok) throw new Error('Upload failed');
     return await res.json();
-    */
-   return 0;
+    
+   // return 0;
 };
 
   // ✅ 청크를 ReactFlow 노드로 매핑
@@ -92,13 +95,13 @@ export default function PDFViewer() {
         <div className="w-full h-full relativep-2 pt-5">
           <div className="fixed top-1 right-1 flex space-x-1">
             <button
-          onClick={() => handleFontSizeChange(chunk.id, 1)}
+          onClick={() => handleFontSizeChange(chunk.id, 2)}
           className="text-xs bg-gray-500 text-white px-1 rounded"
         >
           f⁺
         </button>
         <button
-          onClick={() => handleFontSizeChange(chunk.id, -1)}
+          onClick={() => handleFontSizeChange(chunk.id, -2)}
           className="text-xs bg-gray-500 text-white px-1 rounded"
         >
           f⁻
@@ -122,15 +125,17 @@ export default function PDFViewer() {
     🎨
   </button>
         <button
-          onClick={() => handleDeleteChunk(chunk.id)}
+          onClick={() => requestDeleteChunk(chunk.id)}
           className="text-xs bg-red-500 text-white px-1 rounded"
         >
-          🗑
+          X
         </button>
       </div>
             <pre className="whitespace-pre-wrap"><b>Q: </b>{chunk.query}</pre>
           <hr className="my-2 border-t border-gray-300" />
-          {chunk.type==='text' ? <div><pre className="whitespace-pre-wrap"><b>A: </b>{chunk.answer}</pre></div> : 
+          {chunk.loading ? (
+          <div className="text-gray-400 animate-pulse">생성 중...</div>
+        ) : chunk.type==='text' ? <div><pre className="whitespace-pre-wrap"><b>A: </b>{chunk.answer}</pre></div> : 
           <div><b>A: </b><img src={chunk.answer} alt="Generate Failed" className="rounded-md border" /></div>}
         </div>
       ),
@@ -151,6 +156,10 @@ export default function PDFViewer() {
     },
   }));
 
+  const requestDeleteChunk = (id: string) => {
+  setChunkToDelete(id);
+  setIsDeleteModalOpen(true);
+};
 
   const handleResizeChunk = (id: string, direction: number) => {
   const sizeStep = 50; // 한 번에 늘어나는 px
@@ -261,7 +270,6 @@ const handleFontSizeChange = (id: string, delta: number) => {
 
   const onNodesChange = (changes: any) => {
     // 노드 위치 변경 시 chunks 상태도 동기화
-    // highlightText(changes.data.references.text, changes.style.background);
     changes.forEach((change: any) => {
       if (change.type === "position" && change.position) {
         setChunks((prev) =>
@@ -303,17 +311,17 @@ const handleFontSizeChange = (id: string, delta: number) => {
   };
 
   const generateLLMResponse = async (
-    query: string, type: 'text' | 'image'
+    id: string, query: string, type: 'text' | 'image'
   ) => {
     if(type==='text'){
-      /*
+      
         try {
         const res = await fetch('http://localhost:8000/process_query', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ query }),
+          body: JSON.stringify({ id, query }),
         });
 
         if (!res.ok) throw new Error('Server error');
@@ -322,11 +330,14 @@ const handleFontSizeChange = (id: string, delta: number) => {
         console.error(err);
         throw err;
       }
-      */
-     return { ai_answer: "This is the AI-generated answer."};
+      
+     /* return { ai_answer: "This is the AI-generated answer.",
+      page: 1,
+      text: ""};
+     */
     }
     else if(type==='image'){
-      /*
+      
       try {
         const res = await fetch('http://localhost:8000/generate-image', {
           method: 'POST',
@@ -342,21 +353,24 @@ const handleFontSizeChange = (id: string, delta: number) => {
         console.error(err);
         throw err;
       }
-      */
+      
+     /*
         return {
       message: "Image generated and saved successfully!",
       original_prompt: "When the stars threw down their spears",
       optimized_prompt: "A dramatic celestial scene showing stars casting their spears in a cosmic battle",
       image_url: "http://localhost:8000/image_gen/image_When_the_stars_threw_4a8232b9.png"
       }
+      */
     }
   };
 
   const createQueryResponseChunk = async (text: string, type: 'text'| 'image') => {
+    const id = crypto.randomUUID();
     if (!text.trim()) return;
-    const response = await generateLLMResponse(text, type);
+    const response = await generateLLMResponse(id, text, type);
     const newChunk: Chunk = {
-      id: crypto.randomUUID(),
+      id: id,
       x: 50 + chunks.length * 30,
       y: 50 + chunks.length * 30,
       width: 300,
@@ -368,11 +382,19 @@ const handleFontSizeChange = (id: string, delta: number) => {
       type: type,
       loading: true,
       references: {
-        page: pageNumber,
-        text: text,
+        page: type==='text' ? response?.page : pageNumber,
+        text: type==='text' ? response?.text : text,
       },
     };
     setChunks((prev) => [...prev, newChunk]);
+
+    setTimeout(() => {
+      setChunks((prev) =>
+        prev.map((chunk) =>
+          chunk.id === id ? { ...chunk, loading: false } : chunk
+        )
+      );
+    }, 1500);
   };
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
@@ -382,6 +404,34 @@ const handleFontSizeChange = (id: string, delta: number) => {
 
   return (
     <div className="p-4 space-y-4">
+      {isDeleteModalOpen && (
+  <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="bg-white rounded-xl p-6 w-96 shadow-2xl border border-gray-200">
+      <h2 className="text-lg font-semibold mb-4 text-gray-800">정말 삭제하시겠습니까?</h2>
+      <p className="mb-6 text-sm text-gray-600">삭제된 청크는 복구할 수 없습니다.</p>
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => setIsDeleteModalOpen(false)}
+          className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300"
+        >
+          취소
+        </button>
+        <button
+          onClick={() => {
+            if (chunkToDelete) {
+              handleDeleteChunk(chunkToDelete);
+            }
+            setIsDeleteModalOpen(false);
+            setChunkToDelete(null);
+          }}
+          className="px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600"
+        >
+          삭제
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       <input type="file" accept="application/pdf" onChange={handleFileChange} />
 
       <div className="flex gap-4">
