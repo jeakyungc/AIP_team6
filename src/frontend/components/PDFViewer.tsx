@@ -17,6 +17,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
 
@@ -86,130 +87,71 @@ const [chunkToDelete, setChunkToDelete] = useState<string | null>(null);
    // return 0;
 };
 
-  // ✅ 청크를 ReactFlow 노드로 매핑
-  const nodes: Node[] = chunks.map((chunk) => ({
-    id: chunk.id,
-    type: "default",
-    data: {
-      label: (
-        <div className="w-full h-full relativep-2 pt-5">
-          <div className="fixed top-1 right-1 flex space-x-1">
-            <button
-          onClick={() => handleFontSizeChange(chunk.id, 2)}
-          className="text-xs bg-gray-500 text-white px-1 rounded"
-        >
-          f⁺
-        </button>
-        <button
-          onClick={() => handleFontSizeChange(chunk.id, -2)}
-          className="text-xs bg-gray-500 text-white px-1 rounded"
-        >
-          f⁻
-        </button>
-        <button
-          onClick={() => handleResizeChunk(chunk.id, 1)}
-          className="text-xs bg-blue-500 text-white px-1 rounded"
-        >
-          ＋
-        </button>
-        <button
-          onClick={() => handleResizeChunk(chunk.id, -1)}
-          className="text-xs bg-yellow-500 text-white px-1 rounded"
-        >
-          −
-        </button>
-        <button
-    onClick={() => handleChangeColor(chunk.id)}
-    className="text-xs bg-purple-500 text-white px-1 rounded"
-  >
-    🎨
-  </button>
-        <button
-          onClick={() => requestDeleteChunk(chunk.id)}
-          className="text-xs bg-red-500 text-white px-1 rounded"
-        >
-          X
-        </button>
+  const nodes: Node[] = chunks.map((chunk, index) => ({
+  id: chunk.id,
+  type: "default",
+  data: {
+    label: (
+      <div className="relative w-full h-full p-4 rounded-xl text-left">
+        {/* 인덱스 번호 */}
+      <div className="absolute -top-2 -left-2 bg-black text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+        {index + 1}
       </div>
-            <pre className="whitespace-pre-wrap"><b>Q: </b>{chunk.query}</pre>
+
+        {/* 오른쪽 상단 버튼들 */}
+        <div className="absolute top-2 right-2 flex gap-1 flex-wrap">
+          <button
+            onClick={() => requestDeleteChunk(chunk.id)}
+            className="text-xs bg-red-500 text-white px-1 rounded hover:bg-red-600"
+          >
+            ✕
+          </button>
+        </div>
+
+        <span className="text-[8px] font-medium text-gray-500 uppercase tracking-wide">{chunk.type === 'image' ? '이미지' : '텍스트'}</span>
+
+        {/* 내용 */}
+        <div style={{ fontSize: chunk.fontSize } } className="pt-4">
+          <pre className="whitespace-pre-wrap font-semibold text-gray-700 mb-2">
+            Q: {chunk.query}
+          </pre>
           <hr className="my-2 border-t border-gray-300" />
           {chunk.loading ? (
-          <div className="text-gray-400 animate-pulse">생성 중...</div>
-        ) : chunk.type==='text' ? <div><pre className="whitespace-pre-wrap"><b>A: </b>{chunk.answer}</pre></div> : 
-          <div><b>A: </b><img src={chunk.answer} alt="Generate Failed" className="rounded-md border" /></div>}
+            <div className="text-gray-400 animate-pulse">생성 중...</div>
+          ) : chunk.type === 'text' ? (
+            <pre className="whitespace-pre-wrap text-gray-800">A: {chunk.answer}</pre>
+          ) : (
+            <div>
+              <b>A: </b>
+              <img
+                src={chunk.answer}
+                alt="Generate Failed"
+                className="rounded-md border mt-1 max-w-full"
+              />
+            </div>
+          )}
         </div>
-      ),
-      references: {
-        page: chunk.references.page,
-        text: chunk.references.text,
-      },
+      </div>
+    ),
+    references: {
+      page: chunk.references.page,
+      text: chunk.references.text,
     },
-    position: { x: chunk.x, y: chunk.y },
-    style: {
-      width: chunk.width,
-      height: chunk.height,
-      background: chunk.color || "#fefcbf",
-      border: "1px round rgb(255, 255, 255)",
-      padding: 10,
-      fontSize: chunk.fontSize,
-      overflow: "auto",
-    },
-  }));
+  },
+  position: { x: chunk.x, y: chunk.y },
+  style: {
+    width: chunk.width,
+    height: chunk.height,
+    background: chunk.color,
+    borderRadius: 12,
+    overflow: "auto",
+  },
+}));
+
 
   const requestDeleteChunk = (id: string) => {
   setChunkToDelete(id);
   setIsDeleteModalOpen(true);
-};
-
-  const handleResizeChunk = (id: string, direction: number) => {
-  const sizeStep = 50; // 한 번에 늘어나는 px
-  setChunks((prevChunks) =>
-    prevChunks.map((chunk) => {
-      if (chunk.id === id) {
-        return {
-          ...chunk,
-          width: Math.max(150, chunk.width + sizeStep * direction),
-          height: Math.max(150, chunk.height + sizeStep * direction),
-        };
-      }
-      return chunk;
-    })
-  );
-};
-
-const handleChangeColor = (id: string) => {
-  const availableColors = [
-    "#fefcbf",
-    "#c6f6d5",
-    "#bee3f8",
-    "#fbd38d",
-    "#fed7e2",
-    "#e9d8fd",
-  ];
-
-  setChunks((prevChunks) =>
-    prevChunks.map((chunk) => {
-      if (chunk.id === id) {
-        const currentIndex = availableColors.indexOf(chunk.color);
-        const nextColor = availableColors[(currentIndex + 1) % availableColors.length];
-        return { ...chunk, color: nextColor };
-      }
-      return chunk;
-    })
-  );
-};
-
-const handleFontSizeChange = (id: string, delta: number) => {
-  setChunks((prev) =>
-    prev.map((chunk) =>
-      chunk.id === id
-        ? {
-            ...chunk,
-            fontSize: Math.max(10, chunk.fontSize + delta), // 최소 폰트 크기 제한
-          }
-        : chunk
-    )
-  );
 };
 
   const removeHighlight = () => {
@@ -228,7 +170,7 @@ const handleFontSizeChange = (id: string, delta: number) => {
     });
   };
 
-  const highlightText = (targetText: string, color: string) => {
+  const highlightText = (targetText: string) => {
     const spans = document.querySelectorAll(
       ".react-pdf__Page__textContent span"
     );
@@ -237,7 +179,7 @@ const handleFontSizeChange = (id: string, delta: number) => {
       if (span.textContent?.includes(targetText)) {
         const html = span.innerHTML.replace(
           targetText,
-          `<mark style="background: ${color};">${targetText}</mark>`
+          `<mark style="background: #fefcbf;">${targetText}</mark>`
         );
         span.innerHTML = html;
       }
@@ -254,18 +196,6 @@ const handleFontSizeChange = (id: string, delta: number) => {
     setEdges((prev) =>
       prev.filter((edge) => edge.source !== id && edge.target !== id)
     );
-  };
-
-  const getRandomColor = () => {
-    const colors = [
-      "#fefcbf",
-      "#c6f6d5",
-      "#bee3f8",
-      "#fbd38d",
-      "#fed7e2",
-      "#e9d8fd",
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
   };
 
   const onNodesChange = (changes: any) => {
@@ -292,8 +222,10 @@ const handleFontSizeChange = (id: string, delta: number) => {
     if (select) setSelectedNode(select);
 
     const sc = chunks.find((c) => c.id === node.id);
-    setPageNumber(node.data.references.page);
-    if (sc) highlightText(node.data.references.text, sc.color);
+    if (sc?.type === "text"){
+      setPageNumber(node.data.references.page);
+    if (sc) highlightText(node.data.references.text);
+    }
   };
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -313,6 +245,7 @@ const handleFontSizeChange = (id: string, delta: number) => {
   const generateLLMResponse = async (
     id: string, query: string, type: 'text' | 'image'
   ) => {
+    
     if(type==='text'){
       
         try {
@@ -331,7 +264,8 @@ const handleFontSizeChange = (id: string, delta: number) => {
         throw err;
       }
       
-     /* return { ai_answer: "This is the AI-generated answer.",
+      /*
+      return { ai_answer: "This is the AI-generated answer.",
       page: 1,
       text: ""};
      */
@@ -353,6 +287,7 @@ const handleFontSizeChange = (id: string, delta: number) => {
         console.error(err);
         throw err;
       }
+        
       
      /*
         return {
@@ -377,7 +312,7 @@ const handleFontSizeChange = (id: string, delta: number) => {
       height: type==='text' ? 150 : 300,
       query: text,
       answer: type==='text' ? response?.ai_answer : response?.image_url,
-      color: getRandomColor(),
+      color: "#ffffff",
       fontSize: 12,
       type: type,
       loading: true,
@@ -432,37 +367,52 @@ const handleFontSizeChange = (id: string, delta: number) => {
     </div>
   </div>
 )}
-      <input type="file" accept="application/pdf" onChange={handleFileChange} />
 
-      <div className="flex gap-4">
-        <div className="border w-[1200px] h-[1000px] relative bg-white overflow-auto">
-          {file && (
-            <Document file={file} onLoadSuccess={onDocumentLoadSuccess}>
-              <Page pageNumber={pageNumber} renderAnnotationLayer={false} />
-            </Document>
-          )}
-          <div className="sticky bottom-2 left-2 bg-white p-1 rounded shadow">
-            <button
-              onClick={() => setPageNumber((p) => Math.max(p - 1, 1))}
-              disabled={pageNumber <= 1}
-              className="px-2"
-            >
-              ◀
-            </button>
-            <span className="mx-2">
-              페이지 {pageNumber} / {numPages}
-            </span>
-            <button
-              onClick={() => setPageNumber((p) => Math.min(p + 1, numPages))}
-              disabled={pageNumber >= numPages}
-              className="px-2"
-            >
-              ▶
-            </button>
-          </div>
+      <div className="flex h-[80vh]">
+  {/* 왼쪽 - PDF 뷰어 */}
+  <div className="w-1/2 h-full overflow-auto bg-white flex items-center justify-center">
+    {!file ? (
+      <label className="cursor-pointer bg-gray-100 p-4 rounded shadow">
+        <span className="text-gray-700">📄 PDF 업로드</span>
+        <input
+          type="file"
+          accept="application/pdf"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+      </label>
+    ) : (
+      <div className="w-full h-full flex flex-col items-center justify-center">
+        <Document file={file} onLoadSuccess={onDocumentLoadSuccess}>
+          <Page
+            pageNumber={pageNumber}
+            width={window.innerWidth / 2 - 40} // 뷰어 영역 너비에 맞게 조정
+          />
+        </Document>
+        <div className="mt-2 bg-white p-1 rounded shadow flex items-center">
+          <button
+            onClick={() => setPageNumber((p) => Math.max(p - 1, 1))}
+            disabled={pageNumber <= 1}
+            className="px-2"
+          >
+            ◀
+          </button>
+          <span className="mx-2">
+            페이지 {pageNumber} / {numPages}
+          </span>
+          <button
+            onClick={() => setPageNumber((p) => Math.min(p + 1, numPages))}
+            disabled={pageNumber >= numPages}
+            className="px-2"
+          >
+            ▶
+          </button>
         </div>
+      </div>
+    )}
+  </div>
 
-        <div className="w-[1500px] h-[1000px] border overflow-auto">
+        <div className="w-1/2 h-full bg-gray-50 flex items-center justify-center overflow-auto">
           <ReactFlowProvider>
             <ReactFlow
               nodes={nodes}
@@ -481,7 +431,7 @@ const handleFontSizeChange = (id: string, delta: number) => {
           </ReactFlowProvider>
         </div>
       </div>
-      <div className="flex items-center p-2 border-t bg-white">
+      <div className="flex items-center p-2 bg-white">
         <QueryInput
           onSubmit={createQueryResponseChunk} isready={isready}
         />

@@ -38,9 +38,8 @@ export default function RootLayout({
         >
           CHUNK-IT
         </h1></Link>
-          <Link href="/pdf-viewer">📄 PDF 뷰어</Link>
         </nav>
-        <main className="p-4">{children}</main>
+        <main className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</main>
       </body>
     </html>
   )
