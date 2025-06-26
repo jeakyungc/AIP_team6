@@ -2,6 +2,12 @@
 
 Welcome to the **AIP Team6 - PDF RAG MEMO** repository!
 
+## TO execute model
+1. Go to feature/jaekyung branch and find `HGT.ipnyb` file under `src/backend/`
+2. This is stand alone executable jupyter notebook, so download this file and execute on your jupyter server!
+
+****
+
 ## Overview
 
 ### Objective
